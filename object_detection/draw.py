@@ -4,7 +4,7 @@ import numpy as np
 from object_detection.utils import visualization_utils as vis_util
 from shapely import geometry
 from scipy.spatial import Voronoi, ConvexHull
-import pandas as pd
+import xlsxwriter
 
 
 class Drawing(object):
@@ -321,11 +321,11 @@ class Drawing(object):
             self.classes = self.classes
             self.boxes = self.boxes
 
-    def Voronoi_diagram(self,image):
+    def Voronoi_diagram(self,image,output_variable,original_area):
         rec_points = np.array(self.rec_points)   # proyecciones
         rec_points = np.flip(rec_points)
         vor = Voronoi(rec_points)
-        polygon_number = 0
+        polygon_number=0
 
         finite_ridges = []
         finite_points = []
@@ -490,11 +490,29 @@ class Drawing(object):
                 polygon_number+=1
                 cv2.putText(image, str(polygon_number), (round(cx-10),round(cy+10)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
 
+        cv2.imwrite(output_variable,image)
+        workbook = xlsxwriter.Workbook(output_variable.split('.')[0]+'.xlsx')
+        worksheet = workbook.add_worksheet()
+
+        worksheet.set_column('A:A', 25)
+        worksheet.set_column('B:B', 35)
+
+        worksheet.write('A1', 'Polygon Areas in m2')
+        worksheet.write('A2', 'Polygon Area = ')
+        worksheet.write('B2',str(original_area))
+        worksheet.insert_image('C2', output_variable)
+
+        A = 3
         for c,p in enumerate(polygons):
             print('Polygon '+str(c+1)+ ' Area = ' + str(self.measures.Area_Voronoi(polygon_area,p))+' m2')
+            worksheet.write('A'+str(A), 'Polygon '+str(c+1)+' Area = ')
+            worksheet.write('B'+str(A),str(self.measures.Area_Voronoi(polygon_area,p)))
+            A+=1
 
+        workbook.close()
         cv2.imshow('Area selection',image)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
+
 
         return(polygon_area)

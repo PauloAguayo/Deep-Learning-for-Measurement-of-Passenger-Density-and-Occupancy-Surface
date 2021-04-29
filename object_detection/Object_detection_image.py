@@ -19,8 +19,8 @@ parser.add_argument("-m", "--model", required=True, help="path to object detecti
 parser.add_argument("-l", "--labels", required=True, help="path to labels file")
 parser.add_argument("-i", "--input", default=0, type=str, help="path to optional input image file", required=True)
 parser.add_argument("-o", "--output", type=str, default="results/output.jpg", help="path and name to optional output image file")
-parser.add_argument("-c", "--threshold", type=float, default=0.8, help="minimum probability to filter weak detection")
-parser.add_argument("-t", "--calibration", action="store_true", help="option for un-distort input image")
+parser.add_argument("-t", "--threshold", type=float, default=0.8, help="minimum probability to filter weak detection")
+parser.add_argument("-c", "--calibration", action="store_true", help="option for un-distort input image")
 parser.add_argument("-r", "--resize", type=str, default="720,1280", help="resize input image")
 parser.add_argument("-H", "--camera_height", type=float, default=2.5, help="z-coordinate for camera positioning")
 parser.add_argument("-p", "--people_height", type=float, default=1.7, help="z-coordinate for people high")
@@ -140,7 +140,6 @@ print('PASSENGERS DETECTED =',detections_1)
 
 # Drawing polygon and its centroid
 cv2.circle(copy_image,(int(centroid[0]),int(centroid[1])),6,(0,255,255),-1)
-#polygon_area = measures.PolyArea(pts[:,0],pts[:,1])
 pts = pts.reshape((-1,1,2))
 cv2.polylines(copy_image,[pts],True,(0,255,255))
 cv2.polylines(image,[pts],True,(0,255,255))
@@ -160,7 +159,7 @@ if input1=='y':
 detections_2 = draws.Draw_detections(1,camera_height,people_height)
 
 people = int(detections_2)
-polygon_area = draws.Voronoi_diagram(image) ## in slf
+polygon_area = draws.Voronoi_diagram(image,output_variable,outcomes.Telling()) ## in slf
 cv2.imshow('Image',image)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
@@ -170,20 +169,5 @@ print('PASSENGERS DETECTED =',people)
 people_density = outcomes.People_density(people)
 print('AVERAGE DENSITY = ', people_density, ' passengers/m2')
 print('------------------------------------------------------------------------')
-
-# Write a CSV file with the most recent calculations
-# with open(output_variable.split('.')[0]+'.csv','w',newline='') as csv_file:
-#     csv_writer = csv.writer(csv_file)
-#     csv_writer.writerow(['PASSENGERS DETECTED',txt_intro.split('=')[0]+' (m2)','DENSITY (passengers/m2)']) #################
-#     csv_writer.writerow([people,people_density[1],people_density[0]])
-
-# Getting the final picture to save it as the "output_variable" for practical and analytical uses
-#if dec == True: input1 = 0
-draws.Draw_detections(2,camera_height,people_height)
-
-cv2.circle(final_image,(int(centroid[0]),int(centroid[1])),6,(0,255,255),-1)
-cv2.polylines(final_image,[pts],True,(0,255,255))
-cv2.imwrite(output_variable,final_image)
-
 print("PROGRAM FINISHED")
 print('-------------------------------------------------------------------------')
