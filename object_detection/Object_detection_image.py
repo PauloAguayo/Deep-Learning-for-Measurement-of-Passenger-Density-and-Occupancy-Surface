@@ -159,7 +159,9 @@ if input1=='y':
 detections_2 = draws.Draw_detections(1,camera_height,people_height)
 
 people = int(detections_2)
-polygon_area = draws.Voronoi_diagram(image,output_variable,outcomes.Telling()) ## in slf
+if people > 1:
+    polygon_area = draws.Voronoi_diagram(image,output_variable,outcomes.Telling()) ## in slf
+
 cv2.imshow('Image',image)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
