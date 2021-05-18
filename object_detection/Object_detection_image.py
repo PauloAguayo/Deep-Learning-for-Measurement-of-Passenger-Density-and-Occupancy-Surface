@@ -40,7 +40,7 @@ PATH_TO_IMAGE = os.path.join(CWD_PATH,vargs["input"])
 # Storing heights and angle
 people_height = vargs["people_height"]
 camera_height = vargs["camera_height"]
-angle = float(np.pi*vargs["angle"]/180)
+angle = float(np.pi*vargs["angle"]/180)   # radians
 
 
 # Number of classes in the trained model
