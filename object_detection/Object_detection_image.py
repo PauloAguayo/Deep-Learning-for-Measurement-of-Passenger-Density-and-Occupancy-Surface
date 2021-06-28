@@ -21,7 +21,7 @@ parser.add_argument("-i", "--input", default=0, type=str, help="path to optional
 parser.add_argument("-o", "--output", type=str, default="results/output.jpg", help="path and name to optional output image file")
 parser.add_argument("-t", "--threshold", type=float, default=0.8, help="minimum probability to filter weak detection")
 parser.add_argument("-c", "--calibration", action="store_true", help="option for un-distort input image")
-parser.add_argument("-r", "--resize", type=str, default="720,1280", help="resize input image")
+parser.add_argument("-r", "--resize", type=str, default="1,1", help="resize input image")
 parser.add_argument("-H", "--camera_height", type=float, default=2.5, help="z-coordinate for camera positioning")
 parser.add_argument("-p", "--people_height", type=float, default=1.7, help="z-coordinate for people high")
 parser.add_argument("-a", "--angle", type=float, default=15, help="positioning angle in degrees")
@@ -73,11 +73,13 @@ detection_classes = detection_graph.get_tensor_by_name('detection_classes:0')
 # Number of objects detected
 num_detections = detection_graph.get_tensor_by_name('num_detections:0')
 
-# Resizing image
-resized = (int(vargs["resize"].split(',')[0]),int(vargs["resize"].split(',')[1]))
-
 # Loading image
 image = cv2.imread(PATH_TO_IMAGE)
+
+resized = (int(vargs["resize"].split(',')[0]),int(vargs["resize"].split(',')[1]))  ## y,x
+if resized[0]==1:
+    resized = image.shape[:2]
+
 image = cv2.resize(image, (resized[1],resized[0]), interpolation = cv2.INTER_AREA)
 
 # Undistort images

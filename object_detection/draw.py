@@ -29,7 +29,7 @@ class Drawing(object):
 
     def Draw_detections(self,n,H,h):
         print("------ DRAWING DETECTIONS AND OPTIMIZING PROJECTIONS ------")
-        self.rec_points = []
+        self.rec_points = []  # array of projections
         def Quadrant(y,x,beta,photo,caja,clase): # (y,x) centroid detection box
 
             # normalized coordinates
@@ -72,7 +72,7 @@ class Drawing(object):
             # coords y,x
             #cv2.circle(photo,(int(coords[1]),int(coords[0])),3,(255,0,0),-1)
             geom_coords = geometry.Point([coords[1],coords[0]])
-            if self.poly.contains(geom_coords):
+            if self.poly_extended.contains(geom_coords):
                 self.rec_points.append([int(coords[0]),int(coords[1])])
                 vis_util.draw_bounding_box_on_image_array(photo,caja[0],caja[1],caja[2],caja[3],color='red',thickness=4,display_str_list=()) # HEADS
                 cv2.circle(photo,(int(coords[1]),int(coords[0])),3,(255,0,0),-1)
@@ -157,66 +157,9 @@ class Drawing(object):
 
         self.image_bottom[1] = self.centroid[0]
 
-        self.poly_points = []
-        for c,(mx,my) in enumerate(points):
-            if c!=0:
-                mx_prev = points[c-1][0]
-                my_prev = points[c-1][1]
+        self.poly_points = points
+        self.poly_points_shift = [points[1:],points[0]]
 
-                if my>=my_prev:
-                    y_axis = np.arange(my_prev,my+1)
-                else:
-                    y_axis = np.arange(my,my_prev+1)
-                    y_axis = y_axis[::-1]
-
-                if mx>=mx_prev:
-                    x_axis = np.arange(mx_prev,mx+1)
-                else:
-                    x_axis = np.arange(mx,mx_prev+1)
-                    x_axis = x_axis[::-1]
-
-                try:
-                    slope = (my-my_prev)/(mx-mx_prev)
-                except:
-                    slope = np.sign(my-my_prev)
-
-                if len(x_axis) >= len(y_axis):
-                    y_axis = []
-                    for x in x_axis:
-                        self.poly_points.append([round(x),round((-1)*(slope*(mx-x)-my))])
-                else:
-                    x_axis = []
-                    for y in y_axis:
-                        self.poly_points.append([round((-1)*((my-y)/slope-mx)),round(y)])
-
-            if c==len(points)-1:
-                mx_post = points[0][0]
-                my_post = points[0][1]
-
-                if my_post>=my:
-                    y_axis = np.arange(my,my_post+1)
-                else:
-                    y_axis = np.arange(my_post,my+1)
-                    y_axis = y_axis[::-1]
-
-                if mx_post>=mx:
-                    x_axis = np.arange(mx,mx_post+1)
-                else:
-                    x_axis = np.arange(mx_post,mx+1)
-                    x_axis = x_axis[::-1]
-
-                slope = (my_post-my)/(mx_post-mx)
-
-                if len(x_axis) >= len(y_axis):
-                    y_axis = []
-                    for x in x_axis:
-                        self.poly_points.append([round(x),round((-1)*(slope*(mx_post-x)-my_post))])
-                else:
-                    x_axis = []
-                    for y in y_axis:
-                        self.poly_points.append([round((-1)*((my_post-y)/slope-mx_post)),round(y)])
-
-        self.poly_points = self.poly_points[:-1]
         return(points)
 
     def Handcrafted(self,dec):
@@ -292,16 +235,12 @@ class Drawing(object):
             self.boxes = self.boxes
 
     def Voronoi_diagram(self,image,output_variable,original_area):
-        rec_points = np.array(self.rec_points)   # proyecciones
-
-        def str_to(pp):
-            return([str(kk) for kk in pp])
+        rec_points = np.array(self.rec_points)   # np array of projections
 
         polygon_number=0
         polygons = []
         polygon_area = 0
         if rec_points.shape[0] == 2:
-            pol = []
             rec_points = np.flip(rec_points)
             for itr in np.arange(2):
                 t = rec_points[1] - rec_points[0]  # tangent
@@ -309,39 +248,58 @@ class Drawing(object):
                 n = np.array([-t[1], t[0]]) # normal
                 midpoint = rec_points.mean(axis=0)
                 if itr == 0:
-                    p_f = midpoint + np.sign(np.dot(midpoint-t, n)) * n * 3000
+                    p_f = midpoint + np.sign(np.dot(midpoint-t, n)) * n * 1700
                 else:
-                    p_f = midpoint + np.sign(np.dot(midpoint-t, n)) * n * 3000*(-1)
+                    p_f = midpoint + np.sign(np.dot(midpoint-t, n)) * n * 1700*(-1)
 
                 p_i = np.array([midpoint[0],midpoint[1]])  # x,y     # vertices infinitos de voronoi
 
-                if p_f[1]>=p_i[1]:
-                    y_axis = np.arange(p_i[1],p_f[1]+1)
-                else:
-                    y_axis = np.arange(p_f[1],p_i[1]+1)
-                    y_axis = y_axis[::-1]
-                if p_f[0]>=p_i[0]:
-                    x_axis = np.arange(p_i[0],p_f[0]+1)
-                else:
-                    x_axis = np.arange(p_f[0],p_i[0]+1)
-                    x_axis = x_axis[::-1]
 
-                zlope = (p_f[1]-p_i[1])/(p_f[0]-p_i[0])
+                for enu,(x_0,x_1) in enumerate(zip(np.array(self.poly_points),np.array(self.poly_points_shift))):
+                    print(x_0,x_1)
+                    intersection = self.measures.line_intersection(np.array([[x_0,y_0],[x_1,y_1]]),np.array(p_f,p_i))
+                    intersect = [round(intersection[0]),round(intersection[1])]
+                    if intersection[0] != (-100):
+                        self.poly_points = [self.poly_points[:enu+1],intersection,self.poly_points[enu+1:]]
+                        cv2.circle(image,(round(intersection[0]),round(intersection[1])),2,(0,0,255),-1)
+                        break
+            #     if p_f[1]>=p_i[1]:
+            #         y_axis = np.arange(p_i[1],p_f[1]+1)
+            #     else:
+            #         y_axis = np.arange(p_f[1],p_i[1]+1)
+            #         y_axis = y_axis[::-1]
+            #     if p_f[0]>=p_i[0]:
+            #         x_axis = np.arange(p_i[0],p_f[0]+1)
+            #     else:
+            #         x_axis = np.arange(p_f[0],p_i[0]+1)
+            #         x_axis = x_axis[::-1]
+            #
+            #     zlope = (p_f[1]-p_i[1])/(p_f[0]-p_i[0])
+            #
+            #     if len(x_axis) >= len(y_axis):
+            #         y_axis = []
+            #         for x in x_axis:
+            #             y_axis.append((-1)*(zlope*(p_f[0]-x)-p_f[1]))
+            #     else:
+            #         x_axis = []
+            #         for y in y_axis:
+            #             x_axis.append((-1)*((p_f[1]-y)/zlope-p_f[0]))
+            #
+            #     lim_dst = 0
+            #     for y,x in np.transpose(np.array([y_axis,x_axis])):
+            #         pnt = geometry.Point([round(x),round(y)])
+            #         if self.poly_extended.contains(pnt):
+            #             dst_pnt = np.linalg.norm(p_i-np.array([x,y]))
+            #             if dst_pnt >=lim_dst:
+            #                 lim_dst = dst_pnt
+            #                 var_def = [y,x]        # punto que intersecta o colinda con el borde del poligono convexo
+            #
+            #     #cv2.circle(image,(round(x),round(y)),1,(0,255,255),-1)
+            #     self.rec_points.append(var_def)
+            #     cv2.line(image, (p_i[0],p_i[1]), (var_def[1],var_def[0]), (0,255,255), 1)
+            # self.rec_points = sorted(self.rec_points , key=lambda k: [k[0], k[1]])
 
-                if len(x_axis) >= len(y_axis):
-                    y_axis = []
-                    for x in x_axis:
-                        y_axis.append((-1)*(zlope*(p_f[0]-x)-p_f[1]))
-                else:
-                    x_axis = []
-                    for y in y_axis:
-                        x_axis.append((-1)*((p_f[1]-y)/zlope-p_f[0]))
-
-                for y,x in np.transpose(np.array([y_axis,x_axis])):
-                    pnt = geometry.Point([round(x),round(y)])
-                    if self.poly_extended.contains(pnt):
-                        cv2.circle(image,(round(x),round(y)),1,(0,255,255),-1)
-                        pol.append([round(x),round(y)])
+            ################################################################################################
 
             arreglo_c_correct = []
             def_points_1 = pol
