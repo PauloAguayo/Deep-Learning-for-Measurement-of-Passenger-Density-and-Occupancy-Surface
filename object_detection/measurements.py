@@ -33,4 +33,26 @@ class Measurements(object):
         d = (det(*line1), det(*line2))
         x = det(d, xdiff) / div
         y = det(d, ydiff) / div
-        return([x, y])
+        return(np.array([round(x), round(y)]))
+
+
+    def divide_n_conquer_2(self,begin_end,polygon_added):
+        polygones = [[],[]]
+        corte = []
+        activador = 0
+        for en,ot in enumerate(polygon_added):
+            for pt in np.array(begin_end):
+                if (ot==pt).all():
+                    activador+=1
+                    corte.append(en)
+                if 0<activador<2:
+                    polygones[0].append(ot)
+                elif activador==2:
+                    polygones[0].append(ot)
+                    activador+=1
+                    break
+        for ot in polygon_added[corte[1]:]:
+            polygones[1].append(ot)
+        for ot in polygon_added[:corte[0]+1]:
+            polygones[1].append(ot)
+        return(polygones)
