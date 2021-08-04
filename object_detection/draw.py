@@ -32,7 +32,6 @@ class Drawing(object):
         self.rec_points = []  # array of projections
         def Quadrant(y,x,beta,photo,caja,clase): # (y,x) centroid detection box
 
-            # normalized coordinates
             if x<=self.image_bottom[1]:
                 x_axis = np.arange(x,self.image_bottom[1]+1)
                 x_axis = x_axis[::-1]
@@ -72,7 +71,7 @@ class Drawing(object):
             # coords y,x
             #cv2.circle(photo,(int(coords[1]),int(coords[0])),3,(255,0,0),-1)
             geom_coords = geometry.Point([coords[1],coords[0]])
-            if self.poly_extended.contains(geom_coords):
+            if self.poly.contains(geom_coords):
                 self.rec_points.append([int(coords[0]),int(coords[1])])
                 vis_util.draw_bounding_box_on_image_array(photo,caja[0],caja[1],caja[2],caja[3],color='red',thickness=4,display_str_list=()) # HEADS
                 cv2.circle(photo,(int(coords[1]),int(coords[0])),3,(255,0,0),-1)
@@ -145,20 +144,21 @@ class Drawing(object):
         extended_points = []
         for punto in points:
             if (punto[0] <= self.centroid[0]) and (punto[1] <= self.centroid[1]):
-                extended_points.append([punto[0]-1,punto[1]-1])
+                extended_points.append([punto[0]-10,punto[1]-10])
             elif (punto[0] <= self.centroid[0]) and (punto[1] > self.centroid[1]):
-                extended_points.append([punto[0]-1,punto[1]+1])
+                extended_points.append([punto[0]-10,punto[1]+10])
             elif (punto[0] > self.centroid[0]) and (punto[1] <= self.centroid[1]):
-                extended_points.append([punto[0]+1,punto[1]-1])
+                extended_points.append([punto[0]+10,punto[1]-10])
             elif (punto[0] > self.centroid[0]) and (punto[1] > self.centroid[1]):
-                extended_points.append([punto[0]+1,punto[1]+1])
+                extended_points.append([punto[0]+10,punto[1]+10])
 
         self.poly_extended = geometry.Polygon(extended_points)
 
         self.image_bottom[1] = self.centroid[0]
 
         self.poly_points = points
-        self.poly_points_shift = [points[1:],points[0]]
+        self.poly_points_shift = [ p for p in points[1:]]
+        self.poly_points_shift.append(points[0])
 
         return(points)
 
@@ -242,63 +242,26 @@ class Drawing(object):
         polygon_area = 0
         if rec_points.shape[0] == 2:
             rec_points = np.flip(rec_points)
-            for itr in np.arange(2):
-                t = rec_points[1] - rec_points[0]  # tangent
-                t = t / np.linalg.norm(t)
-                n = np.array([-t[1], t[0]]) # normal
-                midpoint = rec_points.mean(axis=0)
-                if itr == 0:
-                    p_f = midpoint + np.sign(np.dot(midpoint-t, n)) * n * 1700
-                else:
-                    p_f = midpoint + np.sign(np.dot(midpoint-t, n)) * n * 1700*(-1)
+            t = rec_points[1] - rec_points[0]  # tangent
+            t = t / np.linalg.norm(t)
+            n = np.array([-t[1], t[0]]) # normal
+            midpoint = rec_points.mean(axis=0)
+            p_f = midpoint + np.sign(np.dot(midpoint-t, n))*n*1700
+            p_i = np.array([midpoint[0],midpoint[1]])  # x,y     # vertices infinitos de voronoi
+            line2 = np.vstack((p_f,p_i))
+            points = []
 
-                p_i = np.array([midpoint[0],midpoint[1]])  # x,y     # vertices infinitos de voronoi
+            for enu,(_0,_1) in enumerate(zip(np.array(self.poly_points),np.array(self.poly_points_shift))):
+                line1 = np.vstack((_0,_1))
+                intersection = self.measures.line_intersection(line1,line2)
 
-
-                for enu,(x_0,x_1) in enumerate(zip(np.array(self.poly_points),np.array(self.poly_points_shift))):
-                    print(x_0,x_1)
-                    intersection = self.measures.line_intersection(np.array([[x_0,y_0],[x_1,y_1]]),np.array(p_f,p_i))
-                    intersect = [round(intersection[0]),round(intersection[1])]
-                    if intersection[0] != (-100):
-                        self.poly_points = [self.poly_points[:enu+1],intersection,self.poly_points[enu+1:]]
-                        cv2.circle(image,(round(intersection[0]),round(intersection[1])),2,(0,0,255),-1)
-                        break
-            #     if p_f[1]>=p_i[1]:
-            #         y_axis = np.arange(p_i[1],p_f[1]+1)
-            #     else:
-            #         y_axis = np.arange(p_f[1],p_i[1]+1)
-            #         y_axis = y_axis[::-1]
-            #     if p_f[0]>=p_i[0]:
-            #         x_axis = np.arange(p_i[0],p_f[0]+1)
-            #     else:
-            #         x_axis = np.arange(p_f[0],p_i[0]+1)
-            #         x_axis = x_axis[::-1]
-            #
-            #     zlope = (p_f[1]-p_i[1])/(p_f[0]-p_i[0])
-            #
-            #     if len(x_axis) >= len(y_axis):
-            #         y_axis = []
-            #         for x in x_axis:
-            #             y_axis.append((-1)*(zlope*(p_f[0]-x)-p_f[1]))
-            #     else:
-            #         x_axis = []
-            #         for y in y_axis:
-            #             x_axis.append((-1)*((p_f[1]-y)/zlope-p_f[0]))
-            #
-            #     lim_dst = 0
-            #     for y,x in np.transpose(np.array([y_axis,x_axis])):
-            #         pnt = geometry.Point([round(x),round(y)])
-            #         if self.poly_extended.contains(pnt):
-            #             dst_pnt = np.linalg.norm(p_i-np.array([x,y]))
-            #             if dst_pnt >=lim_dst:
-            #                 lim_dst = dst_pnt
-            #                 var_def = [y,x]        # punto que intersecta o colinda con el borde del poligono convexo
-            #
-            #     #cv2.circle(image,(round(x),round(y)),1,(0,255,255),-1)
-            #     self.rec_points.append(var_def)
-            #     cv2.line(image, (p_i[0],p_i[1]), (var_def[1],var_def[0]), (0,255,255), 1)
-            # self.rec_points = sorted(self.rec_points , key=lambda k: [k[0], k[1]])
-
+                if self.poly_extended.contains(geometry.Point(intersection)):
+                    if str(intersection) not in points:
+                        points.append(str(intersection))
+                        # cv2.circle(image,(int(round(intersection[0])),int(round(intersection[1]))),3,(0,0,255),-1)
+                        # cv2.imshow('Area selection',image)
+                        # cv2.waitKey(0)
+                        # cv2.destroyAllWindows()
             ################################################################################################
 
             arreglo_c_correct = []
