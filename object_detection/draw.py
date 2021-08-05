@@ -263,34 +263,14 @@ class Drawing(object):
                     begin_end.append(intersection)
 
             polinomios = self.measures.divide_n_conquer_2(begin_end,continuacion_poly_points)
-            ################################################################################################
-            #
-            # arreglo_c_correct = []
-            # def_points_1 = pol
-            # def_points_2 = pol
-            # for c,kn in enumerate(self.poly_points):
-            #     kn = str(kn)
-            #     if kn in str_to(pol):
-            #         arreglo_c_correct.append(c)
-            #
-            # for ff,kkk in enumerate(arreglo_c_correct):
-            #     if ff!=0:
-            #         for i in self.poly_points[arreglo_c_correct[ff-1]:arreglo_c_correct[ff]+1]:
-            #             def_points_1.append(i)
-            #
-            # for kg in self.poly_points[arreglo_c_correct[1]:]:
-            #     def_points_2.append(kg)
-            # for kg in self.poly_points[:arreglo_c_correct[0]+1]:
-            #     def_points_2.append(kg)
-            ##################################################################################################
+
             for en,po in enumerate(polinomios):
                 pts = np.array(po).reshape((-1,1,2))
                 if en==0:
                     cv2.polylines(image,[pts],True,(0,255,0))
                 else:
                     cv2.polylines(image,[pts],True,(0,0,255))
-                # cv2.imshow('Area selection',image)
-                # cv2.waitKey(0)
+
                 hull = ConvexHull(po)
 
                 cx = np.mean(hull.points[hull.vertices,0])
@@ -298,41 +278,10 @@ class Drawing(object):
                 polygons.append(hull.volume)
                 polygon_area += hull.volume
                 polygon_number+=1
-                cv2.putText(image, str(polygon_number), (round(cx-10),round(cy+10)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
+                cv2.putText(image, str(polygon_number), (round(cx-10),round(cy+10)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1, cv2.LINE_AA)
 
-
-##### QUEDE ACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
-            ##################################################################################################
-            # hull = ConvexHull(def_points_1)
-            # for simplex in hull.simplices:
-            #     p_x_s = def_points_1[simplex[0]][0]
-            #     p_y_s = def_points_1[simplex[0]][1]
-            #     p_x_f = def_points_1[simplex[1]][0]
-            #     p_y_f = def_points_1[simplex[1]][1]
-            #     cv2.line(image,(p_x_s,p_y_s),(p_x_f,p_y_f),(255,0,0),2)
-            #
-            # cx = np.mean(hull.points[hull.vertices,0])
-            # cy = np.mean(hull.points[hull.vertices,1])
-            # polygons.append(hull.volume)
-            # polygon_area += hull.volume
-            # polygon_number+=1
-            # cv2.putText(image, str(polygon_number), (round(cx-10),round(cy+10)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
-            #
-            # hull = ConvexHull(def_points_2)
-            # for simplex in hull.simplices:
-            #     p_x_s = def_points_2[simplex[0]][0]
-            #     p_y_s = def_points_2[simplex[0]][1]
-            #     p_x_f = def_points_2[simplex[1]][0]
-            #     p_y_f = def_points_2[simplex[1]][1]
-            #     cv2.line(image,(p_x_s,p_y_s),(p_x_f,p_y_f),(255,0,0),2)
-            #
-            # cx = np.mean(hull.points[hull.vertices,0])
-            # cy = np.mean(hull.points[hull.vertices,1])
-            # polygons.append(hull.volume)
-            # polygon_area += hull.volume
-            # polygon_number+=1
-            # cv2.putText(image, str(polygon_number), (round(cx-10),round(cy+10)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
-
+                # cv2.imshow('Area selection',image)
+                # cv2.waitKey(0)
 
         else:
             rec_points = np.flip(rec_points)
