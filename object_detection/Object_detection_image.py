@@ -5,13 +5,10 @@ from shapely import geometry
 import argparse
 from measurements import Measurements
 from object_detection.utils import label_map_util
-from object_detection.utils import visualization_utils as vis_util
 from draw import Drawing
 from outcomes import Outcomes
 from calibrate import Calibration
-import csv
 import os
-from scipy.spatial import ConvexHull
 
 # Parser arguments
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -170,8 +167,6 @@ cv2.destroyAllWindows()
 
 # 2nd calculations (refinement)
 print('PASSENGERS DETECTED =',people)
-people_density = outcomes.People_density(people)
-print('AVERAGE DENSITY = ', people_density, ' passengers/m2')
 print('------------------------------------------------------------------------')
 print("PROGRAM FINISHED")
 print('-------------------------------------------------------------------------')
