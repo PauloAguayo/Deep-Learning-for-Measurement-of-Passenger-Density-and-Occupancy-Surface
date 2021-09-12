@@ -3,8 +3,10 @@ from measurements import Measurements
 import numpy as np
 from object_detection.utils import visualization_utils as vis_util
 from shapely import geometry
-from scipy.spatial import Voronoi, ConvexHull
+from scipy.spatial import Voronoi, ConvexHull#, voronoi_plot_2d
 import xlsxwriter
+#import matplotlib.pyplot as plt
+
 
 
 class Drawing(object):
@@ -72,8 +74,8 @@ class Drawing(object):
             geom_coords = geometry.Point([coords[1],coords[0]])
             if self.poly.contains(geom_coords):
                 self.rec_points.append([int(coords[0]),int(coords[1])])
-                vis_util.draw_bounding_box_on_image_array(photo,caja[0],caja[1],caja[2],caja[3],color='red',thickness=4,display_str_list=()) # HEADS
-                cv2.circle(photo,(int(coords[1]),int(coords[0])),3,(255,0,0),-1)
+                vis_util.draw_bounding_box_on_image_array(photo,caja[0],caja[1],caja[2],caja[3],color='red',thickness=2,display_str_list=()) # HEADS
+                cv2.circle(photo,(int(coords[1]),int(coords[0])),4,(0,0,255),-1)
                 return(1)
             return(0)
 
@@ -283,7 +285,9 @@ class Drawing(object):
             rec_points = np.flip(rec_points)
             vor = Voronoi(rec_points)
 
-            new_regions, new_vertices = self.measures.n_voronoi(vor)
+            #fig = voronoi_plot_2d(vor)
+
+            new_regions, new_vertices = self.measures.n_voronoi(vor,self.centroid)
 
             new_vertices = np.asarray(new_vertices)
             box = geometry.Polygon(self.poly_points)
@@ -307,6 +311,7 @@ class Drawing(object):
                 polygon_number+=1
                 cv2.putText(image, str(polygon_number), (int(round(cx-10)),int(round(cy+10))), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255), 1, cv2.LINE_AA)
 
+        #fig.savefig('fig.jpg')
 
         avg_density = float(original_area/rec_points.shape[0])
         print('AVERAGE DENSITY =', avg_density, 'passengers/m2')
