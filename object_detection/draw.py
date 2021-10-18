@@ -98,7 +98,7 @@ class Drawing(object):
             if (puntaje>=self.min_score) and (clase==1.0 or clase==4.0):
                 # pixel's distance to radians
                 gamma = np.linalg.norm(np.array([point[1],point[0]])-self.image_bottom)
-                gamma *= (self.angle/(self.max_length))
+                gamma *= (self.angle/(self.max_length)) 
 
                 d1_prima = np.tan(gamma)*H
                 d1 = d1_prima - np.tan(gamma)*h
