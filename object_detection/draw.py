@@ -23,6 +23,11 @@ class Drawing(object):
         self.origin = np.array([0,0])
         self.angle = angle
 
+        d_w = self.image.shape[0]*self.angle/(np.pi/2.0)
+        new_center = int(self.image_center[0]+d_w)
+
+        self.bottom = np.array([int(new_center),int(self.image.shape[1]/2)]) # (y,x)
+
     def Prepare_data(self,scores,boxes,classes):
         self.scores = scores
         self.boxes = boxes
@@ -59,10 +64,10 @@ class Drawing(object):
 
             # optimization points
             lim = 0
-            beta*=(self.max_length/self.angle)
+            beta*=(self.image.shape[0]/self.angle)
             coords = [-100,-100]
             for x_p,y_p in zip(x_axis,y_axis):
-                bottom2Coord = np.linalg.norm(np.array([y_p,x_p])-self.image_bottom)
+                bottom2Coord = np.linalg.norm(np.array([y_p,x_p])-self.bottom)
                 #cv2.circle(photo,(int(x_p),int(y_p)),1,(255,255,0),-1)
                 if bottom2Coord<=abs(beta):
                     if bottom2Coord>lim:
@@ -97,8 +102,8 @@ class Drawing(object):
 
             if (puntaje>=self.min_score) and (clase==1.0 or clase==4.0):
                 # pixel's distance to radians
-                gamma = np.linalg.norm(np.array([point[1],point[0]])-self.image_bottom)
-                gamma *= (self.angle/(self.max_length)) 
+                gamma = np.linalg.norm(np.array([point[1],point[0]])-self.bottom)
+                gamma *= (self.angle/(self.image.shape[0]))
 
                 d1_prima = np.tan(gamma)*H
                 d1 = d1_prima - np.tan(gamma)*h
