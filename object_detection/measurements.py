@@ -6,6 +6,20 @@ class Measurements(object):
         self.gt_pol = gt_pol
 
     def iou(self,bb_test,bb_gt):
+
+        def order_points(corner): # x,y
+            f_corner = [0,0,0,0]
+            if corner[1]<corner[3]:  # y_i < y_f
+                f_corner[1], f_corner[3] = corner[1], corner[3]
+            else:
+                f_corner[1], f_corner[3] = corner[3], corner[1]
+            if corner[0]<corner[2]: # x_i < x_f
+                f_corner[0], f_corner[2] = corner[0], corner[2]
+            else:
+                f_corner[0], f_corner[2] = corner[2], corner[0]
+            return(f_corner)
+
+        bb_test = order_points(bb_test)
         xx1 = np.maximum(bb_test[0], bb_gt[0])
         yy1 = np.maximum(bb_test[1], bb_gt[1])
         xx2 = np.minimum(bb_test[2], bb_gt[2])
@@ -16,6 +30,7 @@ class Measurements(object):
         o = wh / ((bb_test[2]-bb_test[0])*(bb_test[3]-bb_test[1])
           + (bb_gt[2]-bb_gt[0])*(bb_gt[3]-bb_gt[1]) - wh)
         return(o)
+
 
     def Area_Voronoi(self,hull_pol,hull_pol_mini):
         return(float(self.gt_pol*hull_pol_mini/hull_pol))

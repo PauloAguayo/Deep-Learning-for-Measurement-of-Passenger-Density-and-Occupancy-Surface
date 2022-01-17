@@ -33,9 +33,28 @@ class Drawing(object):
         self.boxes = boxes
         self.classes = classes
 
+        # Ensuring there is only one wheelchair in detections, the one with the highest score
+        check_classes = np.argwhere(self.classes==2.0)
+        check_details = []
+        for i,j in check_classes:
+            check_details.append([self.scores[i,j],[i,j]])
+        check_details = np.array(check_details)
+        max_class2 = np.amax(check_details, axis=0)
+        loc = np.argwhere(check_details==max_class2[0])
+        loc_top2 = check_details[loc[0][0],loc[0][1]+1]
+        self.classes[self.classes==2.0]=0.0
+        self.classes[loc_top2[0]]=2.0
+
     def Draw_detections(self,n,H,h):
         print("------ DRAWING DETECTIONS AND OPTIMIZING PROJECTIONS ------")
         self.rec_points = []  # array of projections
+
+        def draw_circle(event,x,y,flags,param):
+            global mouseX,mouseY
+            if event == cv2.EVENT_LBUTTONDBLCLK:
+                cv2.circle(self.copy_image,(x,y),6,(0,255,255),-1)
+                mouseX,mouseY = x,y
+
         def Quadrant(y,x,beta,photo,caja,clase): # (y,x) centroid detection box
 
             if x<=self.image_bottom[1]:
@@ -100,7 +119,7 @@ class Drawing(object):
             if point[1]<0: point[1] = 0
             if point[0]<0: point[0] = 0
 
-            if (puntaje>=self.min_score) and (clase==1.0 or clase==4.0):
+            if (puntaje>=self.min_score) and (clase==1.0): # heads
                 # pixel's distance to radians
                 gamma = np.linalg.norm(np.array([point[1],point[0]])-self.bottom)
                 gamma *= (self.angle/(self.image.shape[0]))
@@ -111,9 +130,26 @@ class Drawing(object):
                 #beta = abs(gamma) - abs(alpha)
                 beta = gamma - alpha
                 people+=Quadrant(int(point[1]),int(point[0]),float(beta),photo,caja,clase)
+            elif (puntaje>=self.min_score) and (clase==2.0): # wheelchair
+                vis_util.draw_bounding_box_on_image_array(photo,caja[0],caja[1],caja[2],caja[3],color='blue',thickness=2,display_str_list=()) # wheelchair
+            elif (puntaje>=self.min_score) and (clase==4.0): # added heads
+                cv2.namedWindow('Draw Projections')
+                cv2.setMouseCallback('Draw Projections',draw_circle)
+
+                while(True):
+                    cv2.imshow('Draw Projections',photo)
+                    k = cv2.waitKey(20) & 0xFF
+                    vis_util.draw_bounding_box_on_image_array(photo,caja[0],caja[1],caja[2],caja[3],color='red',thickness=2,display_str_list=()) # wheelchair
+                    if k == 27:
+                        break
+                    elif k == ord('a'):
+                        self.rec_points.append([mouseY,mouseX])
+                        cv2.circle(photo,(mouseX,mouseY),4,(0,0,255),-1)
+                cv2.destroyAllWindows()
         return(people)
 
     def Generate_Polygon(self, nameWindow):
+
         def draw_circle(event,x,y,flags,param):
             global mouseX,mouseY
             if event == cv2.EVENT_LBUTTONDBLCLK:
@@ -200,7 +236,6 @@ class Drawing(object):
         bx = []
         clss = []
         scr = []
-        print(len(self.scores))
         while(dec=='y'):
             cv2.namedWindow('Handcrafted image')
             cv2.setMouseCallback('Handcrafted image',draw_square)
@@ -218,7 +253,7 @@ class Drawing(object):
                 bx.append([yyy/self.copy_image.shape[0],xxx/self.copy_image.shape[1],(yyy+centr[1])/self.copy_image.shape[0],(xxx+centr[0])/self.copy_image.shape[1]])
                 clss.append([4.0])
                 scr.append([0.99])
-            elif k == ord('z'): # Remove heads
+            elif k == ord('r'): # Remove heads
                 for c,x in enumerate(self.boxes):
                     bb_gt = [x[1],x[0],x[3],x[2]]
                     bb_remove = [self.ix/self.copy_image.shape[1],self.iy/self.copy_image.shape[0],xx/self.copy_image.shape[1],yy/self.copy_image.shape[0]]
@@ -227,11 +262,23 @@ class Drawing(object):
                         cv2.rectangle(self.copy_image,(self.ix,self.iy),(xx,yy),(255,0,255),3)
                         cv2.putText(self.copy_image, text, (self.ix , self.iy-5), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 255), 1)
                         self.classes[c]=3.0
+            elif k == ord('s'): # Add wheelchair
+                text = "Added wheelchair"
+                cv2.rectangle(self.copy_image,(self.ix,self.iy),(xx,yy),(0,255,255),3)
+                cv2.putText(self.copy_image, text, (self.ix , self.iy-5), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 1)
+                centr = np.array([int(abs(self.ix-xx)),int(abs(self.iy-yy))])
+                xxx = np.minimum(xx,self.ix)
+                yyy = np.minimum(yy,self.iy)
+                bx.append([yyy/self.copy_image.shape[0],xxx/self.copy_image.shape[1],(yyy+centr[1])/self.copy_image.shape[0],(xxx+centr[0])/self.copy_image.shape[1]])
+                clss.append([2.0])
+                scr.append([0.99])
+
         cv2.destroyAllWindows()
         try:
             bx = np.array(bx)
             self.boxes = np.concatenate((self.boxes,bx))
             clss = np.array(clss)
+            # np.where(/self.classes == 2.0, self.classes, 0*self.classes+3.0)
             self.classes = np.concatenate((self.classes,clss))
             scr = np.array(scr)
             self.scores = np.concatenate((self.scores,scr))
