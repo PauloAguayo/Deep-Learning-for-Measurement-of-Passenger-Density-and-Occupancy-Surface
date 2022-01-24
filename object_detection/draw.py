@@ -135,6 +135,7 @@ class Drawing(object):
             elif (puntaje>=self.min_score) and (clase==4.0): # added heads
                 cv2.namedWindow('Draw Projections')
                 cv2.setMouseCallback('Draw Projections',draw_circle)
+                people+=1
 
                 while(True):
                     cv2.imshow('Draw Projections',photo)
