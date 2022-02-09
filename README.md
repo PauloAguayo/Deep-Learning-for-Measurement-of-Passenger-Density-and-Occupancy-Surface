@@ -13,6 +13,7 @@ Create a virtual environment and install the next libraries:
 - scipy
 - numpy
 - argparse
+- matplotlib
 
 # Parser
 The program has 9 parser variables, which only 3 are required.
