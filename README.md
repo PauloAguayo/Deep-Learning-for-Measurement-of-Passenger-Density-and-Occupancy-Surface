@@ -10,7 +10,7 @@ Create a virtual environment and install the next libraries:
 - OpenCV
 - Shapely
 - xlsxwriter
-- scipy.spatial
+- scipy
 - numpy
 - argparse
 
