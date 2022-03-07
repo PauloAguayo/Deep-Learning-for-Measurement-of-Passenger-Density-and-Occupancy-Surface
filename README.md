@@ -5,7 +5,7 @@ The detection model is Faster RCNN with InceptionV2. This model was trained to d
 # Install
 Create a virtual environment and install the next libraries:
 
-- Python >=3 
+- Python 3.7 
 - Tensorflow 1.14
 - OpenCV
 - Shapely
