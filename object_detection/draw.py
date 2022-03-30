@@ -32,6 +32,7 @@ class Drawing(object):
         self.scores = scores
         self.boxes = boxes
         self.classes = classes
+        self.rec_points = []  # array of projections
 
         # Ensuring there is only one wheelchair in detections, the one with the highest score
         check_classes = np.argwhere(self.classes==2.0)
@@ -47,7 +48,7 @@ class Drawing(object):
 
     def Draw_detections(self,n,H,h):
         print("------ DRAWING DETECTIONS AND OPTIMIZING PROJECTIONS ------")
-        self.rec_points = []  # array of projections
+
 
         def draw_circle(event,x,y,flags,param):
             global mouseX,mouseY
@@ -133,20 +134,24 @@ class Drawing(object):
             elif (puntaje>=self.min_score) and (clase==2.0): # wheelchair
                 vis_util.draw_bounding_box_on_image_array(photo,caja[0],caja[1],caja[2],caja[3],color='blue',thickness=2,display_str_list=()) # wheelchair
             elif (puntaje>=self.min_score) and (clase==4.0): # added heads
-                cv2.namedWindow('Draw Projections')
-                cv2.setMouseCallback('Draw Projections',draw_circle)
+                #cv2.namedWindow('Draw Projections')
+                #cv2.setMouseCallback('Draw Projections',draw_circle)
                 people+=1
+                vis_util.draw_bounding_box_on_image_array(photo, caja[0], caja[1], caja[2], caja[3], color='red',thickness=2, display_str_list=())  # heads
 
-                while(True):
-                    cv2.imshow('Draw Projections',photo)
-                    k = cv2.waitKey(20) & 0xFF
-                    vis_util.draw_bounding_box_on_image_array(photo,caja[0],caja[1],caja[2],caja[3],color='red',thickness=2,display_str_list=()) # wheelchair
-                    if k == 27:
-                        break
-                    elif k == ord('a'):
-                        self.rec_points.append([mouseY,mouseX])
-                        cv2.circle(photo,(mouseX,mouseY),4,(0,0,255),-1)
-                cv2.destroyAllWindows()
+                #while(True):
+                #    cv2.imshow('Draw Projections',photo)
+                #    k = cv2.waitKey(20) & 0xFF
+                #    vis_util.draw_bounding_box_on_image_array(photo,caja[0],caja[1],caja[2],caja[3],color='red',thickness=2,display_str_list=()) # wheelchair
+                #    if k == 27:
+                #        break
+                #    elif k == ord('a'):
+                #        self.rec_points.append([mouseY,mouseX])
+                #        cv2.circle(photo,(mouseX,mouseY),4,(0,0,255),-1)
+                #cv2.destroyAllWindows()
+
+        for lk in self.rec_points:
+            cv2.circle(photo, (int(lk[1]), int(lk[0])), 4, (0, 0, 255), -1)
         return(people)
 
     def Generate_Polygon(self, nameWindow):
@@ -234,6 +239,11 @@ class Drawing(object):
                     cv2.rectangle(self.copy_image,(x,y),(self.ix,self.iy),(0,255,0),3)
                 elif np.linalg.norm(end_point-self.origin)>np.linalg.norm([self.ix,self.iy]-self.origin):
                     cv2.rectangle(self.copy_image,(self.ix,self.iy),(x,y),(0,255,0),3)
+            elif event == cv2.EVENT_LBUTTONDBLCLK:
+                cv2.circle(self.copy_image,(x,y),6,(0,255,0),-1)
+                xx,yy = x,y
+                self.rec_points.append([yy,xx])
+
         bx = []
         clss = []
         scr = []
@@ -289,7 +299,7 @@ class Drawing(object):
             self.boxes = self.boxes
 
     def Voronoi_diagram(self,image,output_variable,original_area):
-        rec_points = np.array(self.rec_points)   # np array of projections
+        rec_points, uniq_cnt = np.unique(self.rec_points, axis=0, return_counts=True)
 
         polygon_number=0
         polygons = []
